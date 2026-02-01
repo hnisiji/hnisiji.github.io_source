@@ -1,0 +1,33 @@
+name: Build, Encrypt and Deploy
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Encrypt and Prepare
+        uses: hnisiji/instant-lock@main
+        with:
+          input-dir: 'site'
+          output-dir: '__encrypted_dist'
+          password: ${{ secrets.PAGE_PASSWORD }}
+          title: "Protected Site"
+      - name: Deploy to Public Repository
+        run: |
+          cd __encrypted_dist
+          touch .nojekyll
+          git init
+          git branch -m main
+          git config user.name "GitHub Actions Bot"
+          git config user.email "actions@github.com"
+          git add .
+          git commit -m "Deploy"
+          git push -f "https://${{ secrets.API_TOKEN_GITHUB }}@github.com/hnisiji/hnisiji.github.io" main
